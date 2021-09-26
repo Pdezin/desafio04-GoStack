@@ -1,4 +1,4 @@
-import React, { useCallback ,useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "./services/api";
 
 import {
@@ -9,19 +9,28 @@ import {
   StatusBar,
   StyleSheet,
   TouchableOpacity,
-  TextInput
 } from "react-native";
 
 export default function App() {
-  async function handleLikeRepository(id) {
-    api.post(`repositories/${id}/like`)
-  }
-
   const [repositories, setRepositories] = useState([]);
 
   useEffect(() => {
     api.get("repositories").then((response) => setRepositories(response.data));
-  }, [repositories]);
+  }, []);
+
+  async function handleLikeRepository(id) {
+    const response = await api.post(`repositories/${id}/like`);
+    const likedRepository = response.data;
+
+    const repositoriesUpdated = repositories.map((repository) => {
+      if (repository.id === id) {
+        return likedRepository;
+      } else {
+        return repository;
+      }
+    });
+    setRepositories(repositoriesUpdated)
+  }
 
   return (
     <>
@@ -29,22 +38,24 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <FlatList
           data={repositories}
-          keyExtractor={(repositories) => repositories.id}
+          keyExtractor={(repository) => repository.id}
           renderItem={({ item: repository }) => (
             <View style={styles.repositoryContainer}>
               <Text style={styles.repository}>{repository.title}</Text>
               <View style={styles.techsContainer}>
-                {repository.techs.map((item, i) => (
-                  <Text key={i} style={styles.tech}>{item}</Text>
+                {repository.techs.map((tech) => (
+                  <Text key={tech} style={styles.tech}>
+                    {tech}
+                  </Text>
                 ))}
               </View>
 
               <View style={styles.likesContainer}>
                 <Text
                   style={styles.likeText}
-                  testID={`repository-likes-1`}
+                  testID={`repository-likes-${repository.id}`}
                 >
-                  {repository.likes}
+                  {repository.likes} curtidas
                 </Text>
               </View>
 
@@ -58,7 +69,6 @@ export default function App() {
             </View>
           )}
         />
-        
       </SafeAreaView>
     </>
   );
